@@ -40,4 +40,50 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    PC(in=outa, load=jump, inc=true, reset=reset, out[0..14]=pc);
+    // 程序計數器（Program Counter）的定義，輸入為上一條指令的地址（outa），負責遞增、跳轉等操作
+
+    And(a=instruction[15], b=true, out=cinst);
+    And(a=instruction[12], b=cinst, out=minst);
+    Not(in=cinst, out=ainst);
+    // 指令解碼，提取指令的各個位元，包括指令的符號位元，跳躍位元，以及對M寄存器的寫入位元
+
+    And(a=instruction[5], b=cinst, out=storea);
+    And(a=instruction[4], b=cinst, out=stored);
+    And(a=instruction[3], b=cinst, out=storem, out=writeM);
+    // 控制M寄存器的寫入操作，包括寫入地址、數據以及確定是否進行寫入
+
+    And(a=instruction[2], b=cinst, out=instjmplt);
+    And(a=instruction[1], b=cinst, out=instjmpeq);
+    And(a=instruction[0], b=cinst, out=instjmpgt);
+    // 指令解碼，確定指令的跳躍條件
+
+    DRegister(in=outalu, load=stored, out=outd);
+    // D型寄存器，負責存儲ALU的輸出，並在需要時進行寫入
+
+    Or(a=ainst, b=storea, out=loada);
+    Mux16(a=instruction, b=outalu, sel=storea, out=ina);
+    // 多路選擇器，用於選擇ALU的輸入源（指令或D寄存器）
+
+    ARegister(in=ina, load=loada, out=outa, out[0..14]=addressM);
+    // A型寄存器，負責存儲ALU的輸入，即M寄存器的輸出或指令
+
+    Mux16(a=outa, b=inM, sel=minst, out=outaorm);
+    // 多路選擇器，用於選擇ALU的第二個輸入源（M寄存器或指令）
+
+    ALU(x=outd, y=outaorm, zx=instruction[11], nx=instruction[10],
+        zy=instruction[9], ny=instruction[8], f=instruction[7],
+        no=instruction[6], zr=aluzr, ng=alung, out=outM, out=outalu);
+    // 算術邏輯單元（ALU）的運算，包括各種控制信號和輸出結果
+
+    Not(in=alung, out=notalung);
+    Not(in=aluzr, out=notaluzr);
+    And(a=notalung, b=notaluzr, out=alupv);
+    And(a=instjmplt, b=alung, out=jumplt);
+    And(a=instjmpeq, b=aluzr, out=jumpeq);
+    And(a=instjmpgt, b=alupv, out=jumpgt);
+    // 控制跳躍條件的邏輯閘，生成跳躍信號
+
+    Or8Way(in[0]=jumplt, in[1]=jumpeq, in[2]=jumpgt, in[3..7]=false, out=jump);
+    // 八位元OR閘，確定是否執行跳躍操作
 }
