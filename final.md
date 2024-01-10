@@ -10,3 +10,7 @@
 
 ## 第四章、第五章
 全部參考[jtdowney的github](https://github.com/jtdowney/nand2tetris/tree/master/04 "游標顯示")，程式碼皆無修改，理解程度大概75%。
+
+
+## midterm
+有參考ChatGPT，但基本上是自己根據圖片去做解釋。
